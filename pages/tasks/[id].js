@@ -2,9 +2,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getStatusColor } from "@/lib/utils";
 import TaskLayout from "@/layouts/TaskLayout";
+import { useParams } from "next/navigation";
 
 export default function TaskDetailPage() {
+  // use SSG for pre fetching the potential task pages
   const status = "completed";
+
+  const { taskId } = useParams();
+
+  // fetch the relevant task
 
   return (
     <TaskLayout heading="Task Details">

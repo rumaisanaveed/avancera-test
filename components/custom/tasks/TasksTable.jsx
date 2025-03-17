@@ -11,7 +11,9 @@ import { tableHeaders, tasks } from "@/constants";
 import { Pencil, Trash } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { Badge } from "../ui/badge";
+import { Badge } from "../../ui/badge";
+
+// server side rendering due to the changing of tasks again and again
 
 export default function TasksTable() {
   return (

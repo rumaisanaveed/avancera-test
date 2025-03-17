@@ -1,4 +1,4 @@
-import TasksTable from "@/components/custom/TasksTable";
+import TasksTable from "@/components/custom/tasks/TasksTable";
 import BlackHeading from "@/components/custom/typography/BlackHeading";
 import Link from "next/link";
 
