@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,31 +19,46 @@ import {
 } from "@/components/ui/popover";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
+import { Loader2 } from "lucide-react";
 
 export default function TaskForm({
   onSubmit,
   initialValues = {},
   isEditing = false,
+  isLoading,
 }) {
   const {
     register,
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors },
-  } = useForm({
-    defaultValues: {
-      title: initialValues.title || "",
-      description: initialValues.description || "",
-      status: initialValues.status || "pending",
-      dueDate: initialValues.dueDate || "",
-    },
-  });
+  } = useForm();
 
-  const dueDate = watch("dueDate");
   const [openCalendar, setOpenCalendar] = useState(false);
 
-  register("dueDate", { required: "Due Date is required" });
+  // register here coz the error for this field was missing
+  useEffect(() => {
+    register("dueDate", { required: "Due Date is required" });
+  }, [register]);
+
+  // to pre-fill the form with the previous values
+  useEffect(() => {
+    reset({
+      title: initialValues?.title || "",
+      description: initialValues?.description || "",
+      status: initialValues?.status || "pending",
+      dueDate: initialValues?.dueDate || "",
+    });
+  }, [
+    // it was causing unnecessary re-renders
+    // fix : pass them individually
+    reset,
+    JSON.stringify(initialValues),
+  ]);
+
+  const dueDate = watch("dueDate");
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full">
@@ -55,9 +70,7 @@ export default function TaskForm({
             {...register("title", { required: "Title is required" })}
             placeholder="Enter task title"
           />
-          {errors.title && (
-            <p className="text-red-500 text-sm">{errors.title.message}</p>
-          )}
+          {errors.title && <ShowErrorMessage message={errors.title.message} />}
         </div>
 
         <div className="grid gap-2 col-span-2">
@@ -73,10 +86,10 @@ export default function TaskForm({
         <div className="grid gap-2 col-span-1 w-full">
           <Label htmlFor="status">Status</Label>
           <Select
-            defaultValue="pending"
-            onValueChange={(value) =>
-              setValue("status", value, { shouldValidate: true })
-            }
+            defaultValue={initialValues?.status || "pending"}
+            onValueChange={(value) => {
+              setValue("status", value, { shouldValidate: true });
+            }}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select status" />
@@ -110,23 +123,44 @@ export default function TaskForm({
                 mode="single"
                 selected={dueDate ? new Date(dueDate) : null}
                 onSelect={(date) => {
-                  setValue("dueDate", date?.toISOString().split("T")[0], {
-                    shouldValidate: true,
-                  });
+                  const formattedDate = date?.toISOString().split("T")[0];
+                  if (formattedDate !== dueDate) {
+                    setValue("dueDate", formattedDate, {
+                      shouldValidate: true,
+                    });
+                  }
                   setOpenCalendar(false);
                 }}
               />
             </PopoverContent>
           </Popover>
           {errors.dueDate && (
-            <p className="text-red-500 text-sm">{errors.dueDate.message}</p>
+            <ShowErrorMessage message={errors.dueDate.message} />
           )}
         </div>
       </div>
 
-      <Button type="submit" className="mt-4 w-full cursor-pointer">
-        {isEditing ? "Update Task" : "Create Task"}
+      <Button
+        type="submit"
+        className="mt-4 w-full flex justify-center items-center cursor-pointer disabled:opacity-50"
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <Loader2 className="animate-spin h-5 w-5 text-white" />
+        ) : isEditing ? (
+          "Update Task"
+        ) : (
+          "Create Task"
+        )}
       </Button>
     </form>
   );
 }
+
+const ShowErrorMessage = ({ message }) => {
+  return (
+    <>
+      <p className="text-red-500 text-sm">{message}</p>
+    </>
+  );
+};

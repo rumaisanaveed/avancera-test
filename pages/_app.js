@@ -1,5 +1,6 @@
 import { Poppins } from "next/font/google";
 import "../styles/globals.css";
+import { Toaster } from "sonner";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -11,6 +12,7 @@ export default function MyApp({ Component, pageProps }) {
   return (
     <div className={poppins.variable}>
       <Component {...pageProps} />
+      <Toaster richColors position="top-right" />
     </div>
   );
 }

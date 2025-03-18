@@ -7,26 +7,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getStatusColor, truncateText } from "@/lib/utils";
-import { tableHeaders, tasks } from "@/constants";
+import { tableHeaders } from "@/constants";
 import { Pencil, Trash } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { Badge } from "../../ui/badge";
+import axiosReq from "@/lib/axiosHandler";
+import { toast } from "sonner";
+import useSWR from "swr";
+import { format } from "date-fns";
 
-// server side rendering due to the changing of tasks again and again
-
-export default function TasksTable() {
+export default function TasksTable({ data, mutate }) {
   return (
     <Table className="border border-gray-200 rounded p-8 w-full">
       <TableCustomHeader />
-      <TableCustomBody />
+      <TableCustomBody tasks={data} mutate={mutate} />
     </Table>
   );
 }
 
 const TableCustomHeader = () => {
   return (
-    // TODO : Align them horizontally
     <TableHeader>
       <TableRow>
         {tableHeaders.map((header, index) => (
@@ -42,68 +43,91 @@ const TableCustomHeader = () => {
   );
 };
 
-const TableCustomBody = () => {
+const TableCustomBody = ({ tasks, mutate }) => {
   const router = useRouter();
+
   const handleTaskClick = (taskId) => {
     router.push(`/tasks/${taskId}`);
   };
-  const handleDelete = (e, taskId) => {
+
+  const handleDelete = async (e, taskId) => {
     e.stopPropagation();
-    console.log(`Task ${taskId} deleted!`);
+    try {
+      const res = await axiosReq("DELETE", `tasks/${taskId}`);
+
+      if (res.data.success) {
+        toast.success(res.data.message);
+        mutate();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to delete task!");
+    }
   };
+
   return (
     <TableBody>
-      {tasks.map((task) => (
-        <TableRow key={task.id} className="text-gray-500">
+      {tasks.length === 0 ? (
+        <TableRow>
           <TableCell
-            className="cursor-pointer"
-            onClick={() => handleTaskClick(task.id)}
+            colSpan={tableHeaders.length}
+            className="text-center py-10 text-3xl font-medium"
           >
-            {task.title}
-          </TableCell>
-
-          <TableCell
-            className="cursor-pointer truncate max-w-xs"
-            title={task.description}
-            onClick={() => handleTaskClick(task.id)}
-          >
-            {truncateText(task.description)}
-          </TableCell>
-
-          <TableCell
-            className="cursor-pointer"
-            onClick={() => handleTaskClick(task.id)}
-          >
-            <Badge className={getStatusColor(task.status)}>{task.status}</Badge>
-          </TableCell>
-
-          <TableCell
-            className="cursor-pointer"
-            onClick={() => handleTaskClick(task.id)}
-          >
-            {task.dueDate}
-          </TableCell>
-
-          <TableCell>
-            <div className="flex items-center gap-3">
-              <Link
-                className="text-blue-600 hover:text-blue-800"
-                href={`/tasks/${task.id}/edit`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Pencil size={16} />
-              </Link>
-              <button
-                className="text-red-600 hover:text-red-800"
-                type="submit"
-                onClick={(e) => handleDelete(e, task.id)}
-              >
-                <Trash size={16} />
-              </button>
-            </div>
+            No Tasks Found!
           </TableCell>
         </TableRow>
-      ))}
+      ) : (
+        tasks.map(({ _id: taskId, title, description, dueDate, status }) => (
+          <TableRow key={taskId} className="text-gray-500">
+            <TableCell
+              className="cursor-pointer"
+              onClick={() => handleTaskClick(taskId)}
+            >
+              {title}
+            </TableCell>
+
+            <TableCell
+              className="cursor-pointer truncate max-w-xs"
+              title={description}
+              onClick={() => handleTaskClick(taskId)}
+            >
+              {truncateText(description)}
+            </TableCell>
+
+            <TableCell
+              className="cursor-pointer"
+              onClick={() => handleTaskClick(taskId)}
+            >
+              <Badge className={getStatusColor(status)}>{status}</Badge>
+            </TableCell>
+
+            <TableCell
+              className="cursor-pointer"
+              onClick={() => handleTaskClick(taskId)}
+            >
+              {format(new Date(dueDate), "yyyy-MM-dd")}
+            </TableCell>
+
+            <TableCell>
+              <div className="flex items-center gap-3">
+                <Link
+                  className="text-blue-600 hover:text-blue-800"
+                  href={`/tasks/${taskId}/edit`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Pencil size={16} />
+                </Link>
+                <button
+                  className="text-red-600 hover:text-red-800 cursor-pointer"
+                  type="submit"
+                  onClick={(e) => handleDelete(e, taskId)}
+                >
+                  <Trash size={16} />
+                </button>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))
+      )}
     </TableBody>
   );
 };
