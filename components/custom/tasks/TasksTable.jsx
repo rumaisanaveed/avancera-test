@@ -14,14 +14,18 @@ import { useRouter } from "next/router";
 import { Badge } from "../../ui/badge";
 import axiosReq from "@/lib/axiosHandler";
 import { toast } from "sonner";
-import useSWR from "swr";
 import { format } from "date-fns";
 
-export default function TasksTable({ data, mutate }) {
+export default function TasksTable({ data, mutate, error, isLoading }) {
   return (
     <Table className="border border-gray-200 rounded p-8 w-full">
       <TableCustomHeader />
-      <TableCustomBody tasks={data} mutate={mutate} />
+      <TableCustomBody
+        tasks={data}
+        mutate={mutate}
+        error={error}
+        isLoading={isLoading}
+      />
     </Table>
   );
 }
@@ -43,7 +47,7 @@ const TableCustomHeader = () => {
   );
 };
 
-const TableCustomBody = ({ tasks, mutate }) => {
+const TableCustomBody = ({ tasks, mutate, error, isLoading }) => {
   const router = useRouter();
 
   const handleTaskClick = (taskId) => {
@@ -66,7 +70,29 @@ const TableCustomBody = ({ tasks, mutate }) => {
 
   return (
     <TableBody>
-      {tasks.length === 0 ? (
+      {error && (
+        <TableRow>
+          <TableCell
+            colSpan={tableHeaders.length}
+            className="text-center py-10 text-red-600 text-lg font-semibold"
+          >
+            Failed to load tasks. Please try again.
+          </TableCell>
+        </TableRow>
+      )}
+
+      {isLoading && (
+        <TableRow>
+          <TableCell
+            colSpan={tableHeaders.length}
+            className="text-center py-10 text-gray-600 text-lg font-medium animate-pulse"
+          >
+            Loading tasks...
+          </TableCell>
+        </TableRow>
+      )}
+
+      {!isLoading && !error && tasks?.length === 0 && (
         <TableRow>
           <TableCell
             colSpan={tableHeaders.length}
@@ -75,7 +101,11 @@ const TableCustomBody = ({ tasks, mutate }) => {
             No Tasks Found!
           </TableCell>
         </TableRow>
-      ) : (
+      )}
+
+      {!isLoading &&
+        !error &&
+        tasks?.length > 0 &&
         tasks.map(({ _id: taskId, title, description, dueDate, status }) => (
           <TableRow key={taskId} className="text-gray-500">
             <TableCell
@@ -126,8 +156,7 @@ const TableCustomBody = ({ tasks, mutate }) => {
               </div>
             </TableCell>
           </TableRow>
-        ))
-      )}
+        ))}
     </TableBody>
   );
 };

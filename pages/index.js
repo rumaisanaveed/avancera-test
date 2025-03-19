@@ -1,33 +1,20 @@
+import { useState } from "react";
 import TasksTable from "@/components/custom/tasks/TasksTable";
 import BlackHeading from "@/components/custom/typography/BlackHeading";
 import Link from "next/link";
 import useSWR from "swr";
 import axios from "axios";
+import { Input } from "@/components/ui/input";
 
-// axiosReq was causing the api route issue
 const fetcher = (url) => axios.get(url).then((res) => res.data.data);
 
-// server side rendering was causing issues here of mutating
 export default function TasksPage() {
   const { data: tasks, error, mutate } = useSWR("/api/tasks", fetcher);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  if (error)
-    return (
-      <div className="flex items-center justify-center h-screen w-full">
-        <p className="text-red-600 text-lg font-semibold">
-          Failed to load tasks. Please try again.
-        </p>
-      </div>
-    );
-
-  if (!tasks)
-    return (
-      <div className="flex items-center justify-center h-screen w-full">
-        <p className="text-gray-600 text-lg font-medium animate-pulse">
-          Loading tasks...
-        </p>
-      </div>
-    );
+  const filteredTasks = tasks?.filter((task) =>
+    task.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="h-screen w-full lg:w-11/12 mx-auto p-10 flex flex-col grow gap-6">
@@ -40,7 +27,21 @@ export default function TasksPage() {
           Create
         </Link>
       </div>
-      <TasksTable data={tasks} mutate={mutate} />
+
+      <Input
+        type="text"
+        placeholder="Search by title..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-[300px]"
+      />
+
+      <TasksTable
+        data={filteredTasks}
+        mutate={mutate}
+        error={error}
+        isLoading={!tasks}
+      />
     </div>
   );
 }
