@@ -81,7 +81,7 @@ const TableCustomBody = ({ tasks, mutate, error, isLoading }) => {
         </TableRow>
       )}
 
-      {isLoading && (
+      {isLoading && !error && (
         <TableRow>
           <TableCell
             colSpan={tableHeaders.length}
