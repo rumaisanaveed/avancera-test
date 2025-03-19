@@ -57,7 +57,7 @@ Follow these steps to set up and run the project locally:
 
 1. **Clone the Repository**
    ```sh
-   git clone https://github.com/rumaisanaveed/avancera-test
+   git clone https://github.com/rumaisanaveed/avancera-test.git
    cd avancera-test
    ```
 
